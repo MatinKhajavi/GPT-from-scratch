@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict
+from typing import Dict, Any
 
 class MHAttention(nn.Module):
     """
@@ -159,7 +159,7 @@ class TransformerBlock(nn.Module):
     with layer normalization and dropout applied at each step.
     """
 
-    def __init__(self, cfg: Dict[str, int]) -> None:
+    def __init__(self, cfg: Dict[str, Any]) -> None:
         """
         Initializes the TransformerBlock module.
 
@@ -169,7 +169,7 @@ class TransformerBlock(nn.Module):
             - "n_heads": int, the number of attention heads.
             - "drop_rate": float, the dropout rate.
             - "qkv_bias": bool, whether to include bias in the query, key, value projections.
-        :type cfg: Dict[str, int]
+        :type cfg: Dict[str, Any]
         """
         super().__init__()
         self.mha = MHAttention(
@@ -206,3 +206,4 @@ class TransformerBlock(nn.Module):
         x = x + shortcut  
 
         return x
+    
