@@ -87,4 +87,38 @@ class GELU(nn.Module):
             (x + 0.044715 * torch.pow(x, 3))
         ))
 
-    
+
+class LayerNorm(nn.Module):
+    """
+    Layer Normalization module.
+
+    This module applies layer normalization to the input tensor.
+    """
+
+    def __init__(self, emb_dim: int) -> None:
+        """
+        Initializes the LayerNorm module.
+
+        :param emb_dim: The dimension of the input embedding.
+        :type emb_dim: int
+        """
+        super().__init__()
+        self.eps: float = 1e-5
+        self.scale: nn.Parameter = nn.Parameter(torch.ones(emb_dim))
+        self.shift: nn.Parameter = nn.Parameter(torch.zeros(emb_dim))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies layer normalization to the input tensor.
+
+        :param x: The input tensor to which the layer normalization will be applied.
+        :type x: torch.Tensor
+        :return: The tensor after applying layer normalization.
+        :rtype: torch.Tensor
+        """
+        mean = x.mean(dim=-1, keepdim=True)
+        var = x.var(dim=-1, keepdim=True, unbiased=False)
+        norm_x = (x - mean) / torch.sqrt(var + self.eps)
+        return self.scale * norm_x + self.shift
+
+
