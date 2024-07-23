@@ -13,8 +13,6 @@ class MHAttention(nn.Module):
     :type d_out: int
     :param n_heads: Number of attention heads.
     :type n_heads: int
-    :param number_of_tokens: Number of tokens in the input.
-    :type number_of_tokens: int
     :param dropout: Dropout probability (default: 0.0).
     :type dropout: float, optional
     :param qkv_bias: Whether to add a bias term to the QKV transformations (default: False).
@@ -24,7 +22,7 @@ class MHAttention(nn.Module):
     The output tensors are of shape (batch_size, number_of_tokens, d_out).
     """
 
-    def __init__(self, d_in: int, d_out: int, n_heads: int, number_of_tokens: int, dropout: float = 0.0, qkv_bias: bool = False) -> None:
+    def __init__(self, d_in: int, d_out: int, n_heads: int, dropout: float = 0.0, qkv_bias: bool = False) -> None:
         super().__init__()
 
         assert d_out % n_heads == 0, "Output embedding size (d_out) must be divisible by n_heads"
@@ -32,7 +30,6 @@ class MHAttention(nn.Module):
         self.d_out = d_out
         self.d_head = d_out // n_heads
         self.n_heads = n_heads
-        self.number_of_tokens = number_of_tokens
         self.dropout = dropout
 
         self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias)
@@ -152,3 +149,60 @@ class FeedForward(nn.Module):
         :rtype: torch.Tensor
         """
         return self.layers(x)
+    
+
+class TransformerBlock(nn.Module):
+    """
+    Transformer block module.
+
+    This module applies a multi-head attention mechanism followed by a feed-forward neural network,
+    with layer normalization and dropout applied at each step.
+    """
+
+    def __init__(self, cfg: Dict[str, int]) -> None:
+        """
+        Initializes the TransformerBlock module.
+
+        :param cfg: Configuration dictionary containing the following keys:
+            - "emb_dim": int, the embedding dimension.
+            - "context_length": int, the length of the input sequences.
+            - "n_heads": int, the number of attention heads.
+            - "drop_rate": float, the dropout rate.
+            - "qkv_bias": bool, whether to include bias in the query, key, value projections.
+        :type cfg: Dict[str, int]
+        """
+        super().__init__()
+        self.mha = MHAttention(
+            d_in=cfg["emb_dim"],
+            d_out=cfg["emb_dim"],
+            n_heads=cfg["n_heads"],
+            dropout=cfg["drop_rate"],
+            qkv_bias=cfg["qkv_bias"]
+        )
+        self.ff = FeedForward(cfg["emb_dim"])
+        self.norm1 = LayerNorm(cfg["emb_dim"])
+        self.norm2 = LayerNorm(cfg["emb_dim"])
+        self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies the transformer block to the input tensor.
+
+        :param x: The input tensor to which the transformer block will be applied.
+        :type x: torch.Tensor
+        :return: The tensor after applying the transformer block.
+        :rtype: torch.Tensor
+        """
+        shortcut = x
+        x = self.norm1(x)
+        x = self.mha(x) 
+        x = self.drop_shortcut(x)
+        x = x + shortcut  
+
+        shortcut = x
+        x = self.norm2(x)
+        x = self.ff(x)
+        x = self.drop_shortcut(x)
+        x = x + shortcut  
+
+        return x
