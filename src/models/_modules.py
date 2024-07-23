@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from typing import Dict
 
 class MHAttention(nn.Module):
     """
@@ -122,3 +123,32 @@ class LayerNorm(nn.Module):
         return self.scale * norm_x + self.shift
 
 
+class FeedForward(nn.Module):
+    """
+    FeedForward neural network module.
+    """
+
+    def __init__(self, cfg: Dict[str, int]) -> None:
+        """
+        Initializes the FeedForward module.
+
+        :param cfg: Configuration dictionary containing the embedding dimension.
+        :type cfg: Dict[str, int]
+        """
+        super().__init__()
+        self.layers = nn.Sequential(
+            nn.Linear(cfg["emb_dim"], 4 * cfg["emb_dim"]),
+            GELU(),
+            nn.Linear(4 * cfg["emb_dim"], cfg["emb_dim"]),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies the feedforward neural network to the input tensor.
+
+        :param x: The input tensor to which the feedforward network will be applied.
+        :type x: torch.Tensor
+        :return: The tensor after applying the feedforward network.
+        :rtype: torch.Tensor
+        """
+        return self.layers(x)
