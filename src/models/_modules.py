@@ -5,7 +5,7 @@ import torch.nn.functional as F
 class MHAttention(nn.Module):
     """
     Implements a multihead attention with PyTorch's scaled dot product attention.
-    
+
     :param d_in: Input embedding size.
     :type d_in: int
     :param d_out: Output embedding size. Must be divisible by n_heads.
@@ -60,3 +60,31 @@ class MHAttention(nn.Module):
 
         context_vec = self.proj(context_vec)
         return context_vec
+
+
+class GELU(nn.Module):
+    """
+    Gaussian Error Linear Unit (GELU) activation function.
+    """
+
+    def __init__(self) -> None:
+        """
+        Initializes the GELU activation module.
+        """
+        super().__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Applies the GELU activation function to the input tensor.
+
+        :param x: The input tensor to which the GELU activation will be applied.
+        :type x: torch.Tensor
+        :return: The tensor after applying the GELU activation function.
+        :rtype: torch.Tensor
+        """
+        return 0.5 * x * (1 + torch.tanh(
+            torch.sqrt(torch.tensor(2.0 / torch.pi)) *
+            (x + 0.044715 * torch.pow(x, 3))
+        ))
+
+    
