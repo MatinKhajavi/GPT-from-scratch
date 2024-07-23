@@ -128,18 +128,18 @@ class FeedForward(nn.Module):
     FeedForward neural network module.
     """
 
-    def __init__(self, cfg: Dict[str, int]) -> None:
+    def __init__(self, emb_dim: int) -> None:
         """
         Initializes the FeedForward module.
 
-        :param cfg: Configuration dictionary containing the embedding dimension.
-        :type cfg: Dict[str, int]
+        :param emb_dim: The embedding dimension.
+        :type emb_dim: int
         """
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(cfg["emb_dim"], 4 * cfg["emb_dim"]),
+            nn.Linear(emb_dim, 4 * emb_dim),
             GELU(),
-            nn.Linear(4 * cfg["emb_dim"], cfg["emb_dim"]),
+            nn.Linear(4 * emb_dim, emb_dim),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
