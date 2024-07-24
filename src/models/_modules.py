@@ -182,7 +182,7 @@ class TransformerBlock(nn.Module):
         self.ff = FeedForward(cfg["emb_dim"])
         self.norm1 = LayerNorm(cfg["emb_dim"])
         self.norm2 = LayerNorm(cfg["emb_dim"])
-        self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
+        self.dropout = nn.Dropout(cfg["drop_rate"])
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -196,13 +196,13 @@ class TransformerBlock(nn.Module):
         shortcut = x
         x = self.norm1(x)
         x = self.mha(x) 
-        x = self.drop_shortcut(x)
+        x = self.dropout(x)
         x = x + shortcut  
 
         shortcut = x
         x = self.norm2(x)
         x = self.ff(x)
-        x = self.drop_shortcut(x)
+        x = self.dropout(x)
         x = x + shortcut  
 
         return x
