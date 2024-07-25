@@ -2,6 +2,7 @@ import os
 import numpy as np
 import torch
 from typing import Tuple, List
+from dataclasses import dataclass
 
 @dataclass
 class DataLoaderConfig:
@@ -23,7 +24,7 @@ class DataLoaderConfig:
     :param split: Type of data split ('train' or 'val').
     :type split: str    
     """
-    
+
     n_batches: int
     n_tokens: int
     data_name: str
