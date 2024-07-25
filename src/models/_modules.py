@@ -45,17 +45,17 @@ class MHAttention(nn.Module):
         :returns: Output tensor of shape (batch_size, number_of_tokens, d_out).
         :rtype: torch.Tensor
         """
-        n_batch, n_tokens, _ = x.shape
+        n_batches, n_tokens, _ = x.shape
 
         qkv = self.qkv(x)
-        qkv = qkv.view(n_batch, n_tokens, 3, self.n_heads, self.d_head)
+        qkv = qkv.view(n_batches, n_tokens, 3, self.n_heads, self.d_head)
         qkv = qkv.permute(2, 0, 3, 1, 4)
         query, key, value = qkv.chunk(3, 0)
 
         use_dropout = self.dropout if self.training else 0.0
 
         context_vec = F.scaled_dot_product_attention(query, key, value, is_causal=True, dropout_p=use_dropout)
-        context_vec = context_vec.transpose(1, 2).contiguous().view(n_batch, n_tokens, self.d_out)
+        context_vec = context_vec.transpose(1, 2).contiguous().view(n_batches, n_tokens, self.d_out)
 
         context_vec = self.proj(context_vec)
         return context_vec
