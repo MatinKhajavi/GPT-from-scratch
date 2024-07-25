@@ -34,6 +34,7 @@ class MHAttention(nn.Module):
 
         self.qkv = nn.Linear(d_in, 3 * d_out, bias=qkv_bias)
         self.proj = nn.Linear(d_out, d_out)
+        self.proj.SCALE_INIT = 1
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -135,9 +136,10 @@ class FeedForward(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(
             nn.Linear(emb_dim, 4 * emb_dim),
-            GELU(),
-            nn.Linear(4 * emb_dim, emb_dim),
+            GELU()
         )
+        self.final_l = nn.Linear(4 * emb_dim, emb_dim)
+        self.final_l.SCALE_INIT = 1
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
@@ -148,7 +150,8 @@ class FeedForward(nn.Module):
         :return: The tensor after applying the feedforward network.
         :rtype: torch.Tensor
         """
-        return self.layers(x)
+        x = self.layers(x)
+        return self.final_l(x)
     
 
 class TransformerBlock(nn.Module):
