@@ -3,6 +3,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.models._modules import *
 from typing import Dict, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class GPTConfig:
+    vocab_size: int = 50257  
+    emb_dim: int = 768       
+    context_length: int = 1024  
+    drop_rate: float = 0.1  
+    n_layers: int = 12      
+    n_heads: int = 12       
+    qkv_bias: bool = False  
+
 
 
 class GPT(nn.Module):
@@ -13,11 +26,11 @@ class GPT(nn.Module):
     followed by a series of transformer blocks and a final normalization and output layer.
     """
 
-    def __init__(self, cfg: Dict[str, Any]) -> None:
+    def __init__(self, cfg: GPTConfig) -> None:
         """
         Initializes the GPT module.
 
-        :param cfg: Configuration dictionary containing the following keys:
+        :param cfg: Configuration settings containing the following keys:
             - "vocab_size": int, the size of the vocabulary.
             - "emb_dim": int, the embedding dimension.
             - "context_length": int, the length of the input sequences.
@@ -25,17 +38,18 @@ class GPT(nn.Module):
             - "n_layers": int, the number of transformer layers.
             - "n_heads": int, the number of attention heads.
             - "qkv_bias": bool, whether to include bias in the query, key, value projections.
-        :type cfg: Dict[str, Any]
+        :type cfg: GPTConfig
         """
         super().__init__()
-        self.n_layers = cfg['n_layers']
+
+        self.n_layers = cfg.n_layers
         self.gpt = nn.ModuleDict({
-            "t_embedding": nn.Embedding(cfg["vocab_size"], cfg["emb_dim"]),
-            "p_embedding": nn.Embedding(cfg["context_length"], cfg["emb_dim"]),
-            "dropout": nn.Dropout(cfg["drop_rate"]),
-            "transformers": nn.Sequential(*[TransformerBlock(cfg) for _ in range(cfg["n_layers"])]),
-            "final_ln": LayerNorm(cfg["emb_dim"]),
-            "ln_out": nn.Linear(cfg["emb_dim"], cfg["vocab_size"], bias=False)
+            "t_embedding": nn.Embedding(cfg.vocab_size, cfg.emb_dim),
+            "p_embedding": nn.Embedding(cfg.context_length, cfg.emb_dim),
+            "dropout": nn.Dropout(cfg.drop_rate),
+            "transformers": nn.Sequential(*[TransformerBlock(cfg) for _ in range(cfg.n_layers)]),
+            "final_ln": LayerNorm(cfg.emb_dim),
+            "ln_out": nn.Linear(cfg.emb_dim, cfg.vocab_size, bias=False)
         })
 
         # init params
