@@ -180,7 +180,7 @@ class Trainer:
 
     
     def adjust_optimizer_lr(self, optimizer, iter):
-        lr = self.get_lr(iter)
+        lr = self._get_lr(iter)
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
         
