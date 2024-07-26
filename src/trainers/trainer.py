@@ -18,6 +18,7 @@ class Trainer:
     :param max_iters: Total number of iterations for training.
     :param max_lr: Maximum learning rate.
     :param min_lr: Minimum learning rate.
+    :param use_ddp: Flag to setup DDP or not.
     :param monitor: Flag to monitor the training process.
     :param log_dir: Directory to store logs.
     """
@@ -30,6 +31,7 @@ class Trainer:
                  max_iters: int = 19073,
                  max_lr: float = 6e-4,
                  min_lr: float = 6e-3,
+                 use_ddp: bool = False,
                  monitor: bool = True,
                  log_dir: str = "log") -> None:
         
@@ -40,7 +42,7 @@ class Trainer:
         self.max_iters = max_iters
         self.max_lr = max_lr
         self.min_lr = min_lr
-        self.use_ddp = int(os.environ.get('RANK', -1)) != -1
+        self.use_ddp = use_ddp
         self.monitor = monitor
         self.log_dir = log_dir
 
@@ -128,4 +130,3 @@ class Trainer:
 
     def get_optimizer(self):
         pass
-    
