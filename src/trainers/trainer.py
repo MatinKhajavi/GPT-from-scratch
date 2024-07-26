@@ -26,12 +26,15 @@ class Trainer:
     :param train_loader: The data loader for the training dataset.
     :param val_loader: The data loader for the validation dataset.
     :param raw_model: The original neural network model, unwrapped from DDP if applicable.
+    :param n_epochs: The number of epochs.
     :param warmup_iters: Number of iterations for learning rate warmup.
     :param max_iters: Total number of iterations for training.
+    :param grad_accum_iters: The number of iterations for gradient accumulation.
     :param max_lr: Maximum learning rate.
     :param min_lr: Minimum learning rate.
     :param use_ddp: Flag to setup DDP or not.
     :param monitor: Flag to monitor the training process.
+    :param torch_matmul_percision: Set the precision of floating-point matrix multiplications.
     :param log_dir: Directory to store logs.
     """
 
@@ -40,24 +43,32 @@ class Trainer:
                  train_loader: DataLoader,
                  val_loader: Optional[DataLoader] = None,
                  raw_model: Optional[torch.nn.Module] = None,
+                 n_epochs: int = 1,
                  warmup_iters: int = 715,
                  max_iters: int = 19073,
+                 grad_accum_iters: int = 1,
                  max_lr: float = 6e-4,
                  min_lr: float = 6e-3,
                  use_ddp: bool = False,
                  monitor: bool = True,
+                 torch_matmul_percision: str = "high",
                  log_dir: str = "log") -> None:
         
         self.model = model
         self.raw_model = raw_model
+        self.n_epochs = n_epochs
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.warmup_iters = warmup_iters
         self.max_iters = max_iters
+        self.grad_accum_iters = grad_accum_iters
         self.max_lr = max_lr
         self.min_lr = min_lr
         self.use_ddp = use_ddp
         self.monitor = monitor
+
+        torch.set_float32_matmul_precision(torch_matmul_percision)
+
         self.log_dir = log_dir
 
         os.makedirs(log_dir, exist_ok=True)
@@ -106,7 +117,7 @@ class Trainer:
         """
         Train the model.
         """
-        pass
+        
 
 
     @torch.no_grad()
