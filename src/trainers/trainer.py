@@ -14,6 +14,7 @@ class Trainer:
     :param model: The model to be trained.
     :param train_loader: The data loader for the training dataset.
     :param val_loader: The data loader for the validation dataset.
+    :param raw_model: The original neural network model, unwrapped from DDP if applicable.
     :param warmup_iters: Number of iterations for learning rate warmup.
     :param max_iters: Total number of iterations for training.
     :param max_lr: Maximum learning rate.
@@ -27,6 +28,7 @@ class Trainer:
                  model: torch.nn.Module,
                  train_loader: DataLoader,
                  val_loader: Optional[DataLoader] = None,
+                 raw_model: Optional[torch.nn.Module] = None,
                  warmup_iters: int = 715,
                  max_iters: int = 19073,
                  max_lr: float = 6e-4,
@@ -36,6 +38,7 @@ class Trainer:
                  log_dir: str = "log") -> None:
         
         self.model = model
+        self.raw_model = raw_model
         self.train_loader = train_loader
         self.val_loader = val_loader
         self.warmup_iters = warmup_iters
