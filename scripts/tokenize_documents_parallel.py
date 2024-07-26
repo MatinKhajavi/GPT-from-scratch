@@ -1,6 +1,5 @@
 import os
 import argparse
-import numpy as np
 import multiprocessing as mp
 from datasets import load_dataset
 from src.dataset.dataset_tokenizer import Tokenizer
@@ -31,7 +30,7 @@ def main():
 
     nprocs = max(1, os.cpu_count() // 2)
     with mp.Pool(nprocs) as pool:
-        for tokens in pool.imap(tokenizer.tokenize, fw, chunksize=16):
+        for tokens in pool.imap(tokenizer.tokenize_doc, fw, chunksize=16):
             shard_manager.add_tokens(tokens)
 
     shard_manager.finalize()

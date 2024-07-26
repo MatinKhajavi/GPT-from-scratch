@@ -12,7 +12,7 @@ class Tokenizer:
         self.enc = get_encoding(encoding_name)
         self.eot = self.enc._special_tokens['<|endoftext|>'] 
 
-    def tokenize(self, doc: dict, data_type: type = np.uint16) -> np.ndarray:
+    def tokenize_doc(self, doc: dict, data_type: type = np.uint16) -> np.ndarray:
         """
         Tokenizes a single document and returns a numpy array of uint16 tokens.
         
@@ -26,3 +26,16 @@ class Tokenizer:
         tokens_np = np.array(tokens)
         
         return tokens_np.astype(data_type)
+
+    def tokenize_str(self, string: str) -> list[int]:
+        """
+        Tokenizes a single string and returns a list of int tokens.
+        
+        :param string: A string to tokenize.
+        :type string: str
+        :return: Tokenized string as a list of int.
+        :rtype: list[int]
+        """
+
+        return self.enc.encode(string)
+    
