@@ -7,7 +7,9 @@ Original code by Andrej Karpathy, licensed under the MIT License.
 
 
 import os
+import time
 import torch
+import torch.nn.functional as F
 from torch.distributed import init_process_group, destroy_process_group
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
@@ -73,6 +75,8 @@ class Trainer:
 
         os.makedirs(log_dir, exist_ok=True)
         self.log_file = os.path.join(log_dir, f"log.txt")
+        with open(self.log_file, "w") as _:
+            pass
 
         if self.use_ddp:
             self._setup_ddp()
@@ -118,6 +122,72 @@ class Trainer:
         Train the model.
         """
         
+        optimizer = self._get_optimizer(weight_decay=0.1, learning_rate=6e-4)
+
+        for e in self.n_epochs:
+            self._on_epoch_begin()
+
+            for iter in range(self.max_iters):
+                t0 = time.time()
+
+                self.model.train()
+                optimizer.zero_grad()
+                accumulated_loss = 0.0
+
+                for micro_iter in range(self.grad_accum_iters):
+                    x, y = self.train_loader.next_batch()
+                    x, y = x.to(self.device), y.to(self.device)
+
+                    if self.use_ddp:
+                        self.model.require_backward_grad_sync = (micro_iter == self.grad_accum_iters - 1)
+                    with torch.autocast(device_type=self.device_type, dtype=torch.bfloat16):
+                        logits = self.model(x, y)
+                        loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+
+                    loss = loss / self.grad_accum_iters
+                    accumulated_loss += loss.detach()
+                    loss.backward()
+                
+                if self.use_ddp:
+                    dist.all_reduce(accumulated_loss, op=dist.ReduceOp.AVG)
+                
+                norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+                
+                lr = self.adjust_optimizer_lr(optimizer, iter)
+                
+                optimizer.step()
+
+                is_last_step = (iter == self.max_iters - 1)
+
+                if iter % 500 == 0 or is_last_step:
+                    self.validate()
+                    self.evaluate()
+                
+
+                if self.device_type == "cuda":
+                    torch.cuda.synchronize() 
+                
+                dt = time.time() - t0 
+
+                tokens_processed = self.train_loader.cfg.n_batches * self.train_loader.cfg.n_tokens * self.grad_accum_iters * self.ddp_world_size
+                tokens_per_sec = tokens_processed / dt
+
+                if self.main_process:
+                    if self.monitor:
+                        print(f"epoch {e} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
+                    with open(self.log_file, "a") as f:
+                        f.write(f"epoch {e} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
+
+    
+    def adjust_optimizer_lr(self, optimizer, iter):
+        lr = self.get_lr(iter)
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+        
+        return lr
+
+    def _on_epoch_begin(self):
+        self.train_loader.reset()
 
 
     @torch.no_grad()
@@ -167,7 +237,7 @@ class Trainer:
         :return: The created AdamW optimizer.
         """
         # Start with all of the candidate parameters (that require grad)
-        param_dict = {pn: p for pn, p in self.named_parameters()}
+        param_dict = {pn: p for pn, p in self.raw_model.named_parameters()}
         param_dict = {pn: p for pn, p in param_dict.items() if p.requires_grad}
 
         # Create optim groups. Any parameters that is 2D will be weight decayed, otherwise no.
