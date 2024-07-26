@@ -53,6 +53,8 @@ class Trainer:
 
         self.device_type = "cuda" if self.device.startswith("cuda") else "cpu"
 
+        self.model.to(self.device) 
+
 
     def _setup_device(self) -> None:
         """
