@@ -49,6 +49,9 @@ class Trainer:
         self.monitor = monitor
         self.log_dir = log_dir
 
+        os.makedirs(log_dir, exist_ok=True)
+        self.log_file = os.path.join(log_dir, f"log.txt")
+
         if self.use_ddp:
             self._setup_ddp()
         else:
