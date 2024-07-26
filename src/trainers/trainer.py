@@ -122,7 +122,7 @@ class Trainer:
         Train the model.
         """
         
-        optimizer = self._get_optimizer(weight_decay=0.1, learning_rate=6e-4)
+        self.optimizer = self._get_optimizer(weight_decay=0.1, learning_rate=6e-4)
 
         for e in self.n_epochs:
             self._on_epoch_begin()
@@ -131,7 +131,7 @@ class Trainer:
                 t0 = time.time()
 
                 self.model.train()
-                optimizer.zero_grad()
+                self.optimizer.zero_grad()
                 accumulated_loss = 0.0
 
                 for micro_iter in range(self.grad_accum_iters):
@@ -153,9 +153,9 @@ class Trainer:
                 
                 norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 
-                lr = self.adjust_optimizer_lr(optimizer, iter)
+                lr = self.adjust_optimizer_lr(self.optimizer, iter)
                 
-                optimizer.step()
+                self.optimizer.step()
 
                 is_last_step = (iter == self.max_iters - 1)
 
@@ -174,14 +174,14 @@ class Trainer:
 
                 if self.main_process:
                     if self.monitor:
-                        print(f"epoch {e} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
+                        print(f"Epoch {e} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
                     with open(self.log_file, "a") as f:
-                        f.write(f"epoch {e} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
+                        f.write(f"Epoch {e} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
 
     
-    def adjust_optimizer_lr(self, optimizer, iter):
+    def adjust_optimizer_lr(self, iter):
         lr = self._get_lr(iter)
-        for param_group in optimizer.param_groups:
+        for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
         
         return lr
@@ -191,11 +191,43 @@ class Trainer:
 
 
     @torch.no_grad()
-    def validate(self) -> None:
+    def validate(self, epoch, iter, is_last_iter) -> None:
         """
         Validate the model on the validation dataset.
         """
-        pass
+        
+        self.model.eval()
+        self.val_loader.reset()
+
+        val_loss_accum = 0.0
+        val_loss_iters = 20
+        for _ in range(val_loss_iters):
+            x, y = self.val_loader.next_batch()
+            x, y = x.to(self.device), y.to(self.device)
+            with torch.autocast(device_type=self.device_type, dtype=torch.bfloat16):
+                logits = self.model(x, y)
+                loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
+            loss = loss / val_loss_iters
+            val_loss_accum += loss.detach()
+        if self.use_ddp:
+            dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
+        if self.main_process:
+            if self.monitor:
+                print(f"Validation loss: {val_loss_accum.item():.4f}")
+            with open(self.log_file, "a") as f:
+                f.write(f"{iter} validation loss: {val_loss_accum.item():.4f}\n")
+            if iter > 0 and (iter % 5000 == 0 or is_last_iter):
+                checkpoint_path = os.path.join(self.log_dir, f"model_epoch{epoch}_iter{iter:05d}.pt")
+                checkpoint = {
+                    'model': self.raw_model.state_dict(),
+                    'optimizer': self.optimizer.state_dict(),
+                    'config': self.raw_model.cfg,
+                    'epoch': epoch,
+                    'iter': iter,
+                    'val_loss': val_loss_accum.item()
+                }
+
+                torch.save(checkpoint, checkpoint_path)
 
 
     @torch.no_grad()

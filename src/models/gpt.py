@@ -41,7 +41,7 @@ class GPT(nn.Module):
         :type cfg: GPTConfig
         """
         super().__init__()
-
+        self.cfg = cfg
         self.n_layers = cfg.n_layers
         self.gpt = nn.ModuleDict({
             "t_embedding": nn.Embedding(cfg.vocab_size, cfg.emb_dim),
