@@ -13,7 +13,6 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
-from transformers import GPT2LMHeadModel
 
 # -----------------------------------------------------------------------------
 DATA_CACHE_DIR = os.path.join(os.path.dirname(__file__), "hellaswag")
@@ -39,7 +38,6 @@ hellaswags = {
     "test": "https://raw.githubusercontent.com/rowanz/hellaswag/master/data/hellaswag_test.jsonl",
 }
 
-enc = tiktoken.get_encoding("gpt2")
 
 def download(split):
     """Downloads HellaSwag DATA_CACHE_DIR"""
@@ -49,6 +47,7 @@ def download(split):
     if not os.path.exists(data_filename):
         print(f"Downloading {data_url} to {data_filename}...")
         download_file(data_url, data_filename)
+
 
 def render_example(example):
     """
@@ -69,6 +68,7 @@ def render_example(example):
     }
 
     # gather up all the tokens
+    enc = tiktoken.get_encoding("gpt2")
     ctx_tokens = enc.encode(ctx)
     data["ctx_tokens"] = ctx_tokens
     tok_rows = []
@@ -89,6 +89,7 @@ def render_example(example):
 
     return data, tokens, mask, label
 
+
 def iterate_examples(split):
     # there are 10,042 examples in total in val
     download(split)
@@ -96,3 +97,23 @@ def iterate_examples(split):
         for line in f:
             example = json.loads(line)
             yield example
+
+
+def get_most_likely_row(tokens, mask, logits):
+    # evaluate the autoregressive loss at all positions
+    shift_logits = (logits[..., :-1, :]).contiguous()
+    shift_tokens = (tokens[..., 1:]).contiguous()
+    flat_shift_logits = shift_logits.view(-1, shift_logits.size(-1))
+    flat_shift_tokens = shift_tokens.view(-1)
+    shift_losses = F.cross_entropy(flat_shift_logits, flat_shift_tokens, reduction='none')
+    shift_losses = shift_losses.view(tokens.size(0), -1)
+    # now get the average loss just for the completion region (where mask == 1), in each row
+    shift_mask = (mask[..., 1:]).contiguous() # we must shift mask, so we start at the last prompt token
+    masked_shift_losses = shift_losses * shift_mask
+    # sum and divide by the number of 1s in the mask
+    sum_loss = masked_shift_losses.sum(dim=1)
+    avg_loss = sum_loss / shift_mask.sum(dim=1)
+    # now we have a loss for each of the 4 completions
+    # the one with the lowest loss should be the most likely
+    pred_norm = avg_loss.argmin().item()
+    return pred_norm
