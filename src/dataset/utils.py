@@ -16,11 +16,3 @@ def write_datafile(filename: str, tokens_np: np.ndarray) -> None:
     np.save(filename, tokens_np)
 
 
-def load_dataset(
-        path: str,
-        name: Optional[str] = None,
-        split: Optional[Union[str, Split]] = None
-    ) -> Union[DatasetDict, Dataset, IterableDatasetDict, IterableDataset]:
-
-    return load_dataset("HuggingFaceFW/fineweb-edu", name=name, split=split)
-
