@@ -1,5 +1,6 @@
 import numpy as np
 from tiktoken import get_encoding
+import torch
 
 class Tokenizer:
     """
@@ -11,6 +12,7 @@ class Tokenizer:
     def __init__(self, encoding_name: str):
         self.enc = get_encoding(encoding_name)
         self.eot = self.enc._special_tokens['<|endoftext|>'] 
+
 
     def tokenize_doc(self, doc: dict, data_type: type = np.uint16) -> np.ndarray:
         """
@@ -27,27 +29,31 @@ class Tokenizer:
         
         return tokens_np.astype(data_type)
 
-    def tokenize_str(self, string: str) -> list[int]:
+
+    def tokenize_str(self, string: str) -> torch.Tensor:
         """
-        Tokenizes a single string and returns a list of integer tokens.
-        
+        Tokenizes a single string and returns a tensor of integer tokens.
+
         :param string: A string to tokenize.
         :type string: str
-        :return: Tokenized string as a list of integer.
-        :rtype: list[int]
+        :return: Tokenized string as a tensor of integers.
+        :rtype: torch.Tensor
         """
 
-        return self.enc.encode(string)
+        encoded = self.enc.encode(string)
+        return torch.tensor(encoded).unsqueeze(0)
     
-    def decode_tokens(self, tokens: list[int]) -> str:
+    
+    def decode_tokens(self, tokens: torch.Tensor) -> str:
         """
-        Decodes a list of tokens into a string
+        Decodes a tensor of tokens into a string.
         
-        :param tokens: A list of tokens to decode.
-        :type string: list[int]
-        :return: A decoded string
+        :param tokens: A tensor of tokens to decode.
+        :type tokens: torch.Tensor
+        :return: A decoded string.
         :rtype: str
         """
 
-        return self.enc.decode(tokens)
+        flat = tokens.squeeze(0)
+        return self.enc.decode(flat.tolist())
         
