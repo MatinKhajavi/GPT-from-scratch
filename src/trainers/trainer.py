@@ -186,14 +186,25 @@ class Trainer:
             destroy_process_group()
 
     
-    def adjust_optimizer_lr(self, iter):
+    def adjust_optimizer_lr(self, iter: int) -> float:
+        """
+        Adjust the learning rate of the optimizer based on the current iteration.
+
+        :param iter: The current iteration.
+        :type iter: int
+        :return: The adjusted learning rate.
+        :rtype: float
+        """
         lr = self._get_lr(iter)
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
         
         return lr
 
-    def _on_epoch_begin(self):
+    def _on_epoch_begin(self) -> None:
+        """
+        Perform operations at the beginning of each epoch.
+        """
         self.train_loader.reset()
 
 
@@ -201,6 +212,13 @@ class Trainer:
     def validate(self, epoch, iter, is_last_iter) -> None:
         """
         Validate the model on the validation dataset.
+
+        :param epoch: The current epoch.
+        :type epoch: int
+        :param iter: The current iteration.
+        :type iter: int
+        :param is_last_iter: A flag indicating whether this is the last iteration.
+        :type is_last_iter: bool
         """
         
         self.model.eval()
@@ -240,8 +258,14 @@ class Trainer:
     @torch.no_grad()
     def evaluate(self, epoch, iter) -> None:
         """
-        Evaluate the model. 
+        Evaluate the model on different metrics.
+
+        :param epoch: The current epoch.
+        :type epoch: int
+        :param iter: The current iteration.
+        :type iter: int
         """
+         
         if "Hellaswag" in self.metrics:
             num_correct_norm, num_total = hellaswag_evaluation(self.model, self.ddp_world_size,
                                                                self.ddp_rank, self.device, self.device_type)
