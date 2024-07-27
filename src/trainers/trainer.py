@@ -240,7 +240,7 @@ class Trainer:
             if self.monitor:
                 print(f"Validation loss: {val_loss_accum.item():.3f}")
             with open(self.log_file, "a") as f:
-                f.write(f"{iter} validation loss: {val_loss_accum.item():.3f}\n")
+                f.write(f"Epoch {epoch} | iter {iter} | validation loss: {val_loss_accum.item():.3f}\n")
             if iter > 0 and (iter % 5000 == 0 or is_last_iter):
                 checkpoint_path = os.path.join(self.log_dir, f"model_epoch{epoch}_iter{iter:05d}.pt")
                 checkpoint = {
@@ -283,7 +283,7 @@ class Trainer:
                 if self.monitor:
                     print(f"Hellaswag accuracy: {acc_norm:.3f}")
                 with open(self.log_file, "a") as f:
-                    f.write(f"epoch {epoch} | iter {iter} | Hellaswag accuracy: {acc_norm:.3f}\n")
+                    f.write(f"Epoch {epoch} | iter {iter} | Hellaswag accuracy: {acc_norm:.3f}\n")
 
 
     def _get_lr(self, iter: int) -> float:
