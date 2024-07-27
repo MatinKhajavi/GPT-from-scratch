@@ -15,9 +15,10 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import math
 from typing import Optional, Any, Union
-from src.dataset.dataloader import DataLoader
+from src.dataset import DataLoader
 import inspect
 from torch.optim import Optimizer
+from src.metrics import hellaswag_evaluation
 
 
 class Trainer:
@@ -32,6 +33,7 @@ class Trainer:
     :param warmup_iters: Number of iterations for learning rate warmup.
     :param max_iters: Total number of iterations for training.
     :param grad_accum_iters: The number of iterations for gradient accumulation.
+    :param metrics: A list of metrics to evaluate the model.
     :param max_lr: Maximum learning rate.
     :param min_lr: Minimum learning rate.
     :param use_ddp: Flag to setup DDP or not.
@@ -49,6 +51,7 @@ class Trainer:
                  warmup_iters: int = 715,
                  max_iters: int = 19073,
                  grad_accum_iters: int = 1,
+                 metrics: list[str] = ["Hellaswag"],
                  max_lr: float = 6e-4,
                  min_lr: float = 6e-3,
                  use_ddp: bool = False,
@@ -64,6 +67,7 @@ class Trainer:
         self.warmup_iters = warmup_iters
         self.max_iters = max_iters
         self.grad_accum_iters = grad_accum_iters
+        self.metrics = metrics
         self.max_lr = max_lr
         self.min_lr = min_lr
         self.use_ddp = use_ddp
@@ -161,7 +165,7 @@ class Trainer:
 
                 if iter % 500 == 0 or is_last_step:
                     self.validate(epoch, iter, is_last_step)
-                    self.evaluate()
+                    self.evaluate(epoch, iter)
                 
 
                 if self.device_type == "cuda":
@@ -213,9 +217,9 @@ class Trainer:
             dist.all_reduce(val_loss_accum, op=dist.ReduceOp.AVG)
         if self.main_process:
             if self.monitor:
-                print(f"Validation loss: {val_loss_accum.item():.4f}")
+                print(f"Validation loss: {val_loss_accum.item():.3f}")
             with open(self.log_file, "a") as f:
-                f.write(f"{iter} validation loss: {val_loss_accum.item():.4f}\n")
+                f.write(f"{iter} validation loss: {val_loss_accum.item():.3f}\n")
             if iter > 0 and (iter % 5000 == 0 or is_last_iter):
                 checkpoint_path = os.path.join(self.log_dir, f"model_epoch{epoch}_iter{iter:05d}.pt")
                 checkpoint = {
@@ -231,11 +235,28 @@ class Trainer:
 
 
     @torch.no_grad()
-    def evaluate(self) -> None:
+    def evaluate(self, epoch, iter) -> None:
         """
         Evaluate the model. 
         """
-        pass
+        if "Hellaswag" in self.metrics:
+            num_correct_norm, num_total = hellaswag_evaluation(self.model, self.ddp_world_size,
+                                                               self.ddp_rank, self.device, self.device_type)
+            
+            if self.use_ddp:
+                num_total = torch.tensor(num_total, dtype=torch.long, device=self.device)
+                num_correct_norm = torch.tensor(num_correct_norm, dtype=torch.long, device=self.device)
+                dist.all_reduce(num_total, op=dist.ReduceOp.SUM)
+                dist.all_reduce(num_correct_norm, op=dist.ReduceOp.SUM)
+                num_total = num_total.item()
+                num_correct_norm = num_correct_norm.item()
+            
+            acc_norm = num_correct_norm / num_total
+            if self.main_process:
+                if self.monitor:
+                    print(f"Hellaswag accuracy: {acc_norm:.3f}")
+                with open(self.log_file, "a") as f:
+                    f.write(f"epoch {epoch} | iter {iter} | Hellaswag accuracy: {acc_norm:.3f}\n")
 
 
     def _get_lr(self, iter: int) -> float:
