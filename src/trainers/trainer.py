@@ -124,7 +124,7 @@ class Trainer:
         
         self.optimizer = self._get_optimizer(weight_decay=0.1, learning_rate=6e-4)
 
-        for e in self.n_epochs:
+        for epoch in self.n_epochs:
             self._on_epoch_begin()
 
             for iter in range(self.max_iters):
@@ -160,7 +160,7 @@ class Trainer:
                 is_last_step = (iter == self.max_iters - 1)
 
                 if iter % 500 == 0 or is_last_step:
-                    self.validate()
+                    self.validate(epoch, iter, is_last_step)
                     self.evaluate()
                 
 
@@ -174,9 +174,9 @@ class Trainer:
 
                 if self.main_process:
                     if self.monitor:
-                        print(f"Epoch {e} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
+                        print(f"Epoch {epoch} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
                     with open(self.log_file, "a") as f:
-                        f.write(f"Epoch {e} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
+                        f.write(f"Epoch {epoch} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
 
     
     def adjust_optimizer_lr(self, iter):
