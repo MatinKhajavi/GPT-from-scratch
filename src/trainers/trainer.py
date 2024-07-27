@@ -181,6 +181,9 @@ class Trainer:
                         print(f"Epoch {epoch} | iter {iter:5d} | loss: {accumulated_loss.item():.6f} | lr {lr:.4e} | norm: {norm:.4f} | dt: {dt*1000:.2f}ms | tok/sec: {tokens_per_sec:.2f}")
                     with open(self.log_file, "a") as f:
                         f.write(f"Epoch {epoch} | iter {iter} | train loss: {accumulated_loss.item():.6f}\n")
+        
+        if self.use_ddp:
+            destroy_process_group()
 
     
     def adjust_optimizer_lr(self, iter):
