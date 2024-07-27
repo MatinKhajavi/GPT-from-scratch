@@ -1,1 +1,1 @@
-from hellaswag import render_example, iterate_examples
+from hellaswag import hellaswag_evaluation
