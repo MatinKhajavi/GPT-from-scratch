@@ -171,7 +171,7 @@ class Trainer:
                         idx = tokenize_str("Time traveler in 19th century")
                         generated = self.model.generate(idx, 20)
                         gen_str = decode_tokens(generated)
-                        print(f"GPU {ddp_rank}: {gen_str}")
+                        print(f"GPU {self.ddp_rank}: {gen_str}")
                 
 
                 if self.device_type == "cuda":
