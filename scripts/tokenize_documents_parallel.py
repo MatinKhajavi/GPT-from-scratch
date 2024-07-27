@@ -2,8 +2,8 @@ import os
 import argparse
 import multiprocessing as mp
 from datasets import load_dataset
-from src.dataset.tokenizer import Tokenizer
-from src.dataset.shardmanager import ShardManager
+from src.dataset import Tokenizer, ShardManager
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Tokenizes documents using multiprocessing.")
