@@ -2,7 +2,7 @@ import os
 import argparse
 import multiprocessing as mp
 from datasets import load_dataset
-from src.dataset.dataset_tokenizer import Tokenizer
+from src.dataset.tokenizer import Tokenizer
 from src.dataset.shardmanager import ShardManager
 
 def parse_args():
