@@ -19,7 +19,7 @@ from src.dataset import DataLoader
 import inspect
 from torch.optim import Optimizer
 from src.metrics import hellaswag_evaluation
-
+from src.dataset import tokenize_str, decode_tokens
 
 class Trainer:
     """
@@ -166,6 +166,12 @@ class Trainer:
                 if iter % 500 == 0 or is_last_step:
                     self.validate(epoch, iter, is_last_step)
                     self.evaluate(epoch, iter)
+
+                    if iter > 0:
+                        idx = tokenize_str("Time traveler in 19th century")
+                        generated = self.model.generate(idx, 20)
+                        gen_str = decode_tokens(generated)
+                        print(f"GPU {ddp_rank}: {gen_str}")
                 
 
                 if self.device_type == "cuda":
