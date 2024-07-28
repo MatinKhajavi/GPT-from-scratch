@@ -36,7 +36,7 @@ class GPT(nn.Module):
             "p_embedding": nn.Embedding(cfg.context_length, cfg.emb_dim),
             "dropout": nn.Dropout(cfg.drop_rate),
             "transformers": nn.Sequential(*[TransformerBlock(cfg) for _ in range(cfg.n_layers)]),
-            "final_ln": LayerNorm(cfg.emb_dim),
+            "final_ln": nn.LayerNorm(cfg.emb_dim),
             "ln_out": nn.Linear(cfg.emb_dim, cfg.vocab_size, bias=False)
         })
 

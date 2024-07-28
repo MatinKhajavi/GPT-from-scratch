@@ -24,7 +24,7 @@ class MHAttention(nn.Module):
     The output tensors are of shape (batch_size, number_of_tokens, d_out).
     """
 
-    def __init__(self, d_in: int, d_out: int, n_heads: int, dropout: float = 0.0, qkv_bias: bool = False) -> None:
+    def __init__(self, d_in: int, d_out: int, n_heads: int, dropout: float = 0.1, qkv_bias: bool = False) -> None:
         super().__init__()
 
         assert d_out % n_heads == 0, "Output embedding size (d_out) must be divisible by n_heads"
@@ -50,9 +50,11 @@ class MHAttention(nn.Module):
         n_batches, n_tokens, _ = x.shape
 
         qkv = self.qkv(x)
-        qkv = qkv.view(n_batches, n_tokens, 3, self.n_heads, self.d_head)
-        qkv = qkv.permute(2, 0, 3, 1, 4)
-        query, key, value = qkv.chunk(3, 0)
+
+        q, k, v = qkv.split(self.d_out, dim=2)
+        key = k.view(n_batches, n_tokens, self.n_heads, self.d_head).transpose(1, 2) 
+        query = q.view(n_batches, n_tokens, self.n_heads, self.d_head).transpose(1, 2) 
+        value = v.view(n_batches, n_tokens, self.n_heads, self.d_head).transpose(1, 2)
 
         use_dropout = self.dropout if self.training else 0.0
 
@@ -138,7 +140,8 @@ class FeedForward(nn.Module):
         super().__init__()
         self.layers = nn.Sequential(
             nn.Linear(emb_dim, 4 * emb_dim),
-            GELU()
+            # GELU()
+            nn.GELU(approximate='tanh')
         )
         self.final_l = nn.Linear(4 * emb_dim, emb_dim)
         self.final_l.SCALE_INIT = 1
@@ -185,8 +188,8 @@ class TransformerBlock(nn.Module):
             qkv_bias=cfg.qkv_bias
         )
         self.ff = FeedForward(cfg.emb_dim)
-        self.norm1 = LayerNorm(cfg.emb_dim)
-        self.norm2 = LayerNorm(cfg.emb_dim)
+        self.norm1 = nn.LayerNorm(cfg.emb_dim)
+        self.norm2 = nn.LayerNorm(cfg.emb_dim)
         self.dropout = nn.Dropout(cfg.drop_rate)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
