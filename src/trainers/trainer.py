@@ -147,7 +147,7 @@ class Trainer:
                     self.evaluate(epoch, iter)
 
                     
-                    idx = tokenize_str("A Time traveler in 19th century")
+                    idx = tokenize_str("Once upon a time")
                     idx = idx.to(self.device)
                     generated = self.raw_model.generate(idx, 25)
                     gen_str = decode_tokens(generated)
