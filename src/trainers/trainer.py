@@ -11,7 +11,6 @@ import time
 import torch
 import torch.nn.functional as F
 from torch.distributed import init_process_group, destroy_process_group
-from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.distributed as dist
 import math
 from typing import Optional, Any, Union
@@ -55,6 +54,11 @@ class Trainer:
                  max_lr: float = 6e-4,
                  min_lr: float = 6e-3,
                  use_ddp: bool = False,
+                 device: str = "cpu",
+                 ddp_rank: int = 0,
+                 ddp_local_rank: int = 0,
+                 ddp_world_size: int = 1,
+                 main_process: bool = True,
                  monitor: bool = True,
                  torch_matmul_percision: str = "high",
                  log_dir: str = "log") -> None:
@@ -71,9 +75,15 @@ class Trainer:
         self.max_lr = max_lr
         self.min_lr = min_lr
         self.use_ddp = use_ddp
+        self.device = device
+        self.ddp_rank = ddp_rank
+        self.ddp_local_rank = ddp_local_rank
+        self.ddp_world_size = ddp_world_size
+        self.main_process = main_process
         self.monitor = monitor
 
         torch.set_float32_matmul_precision(torch_matmul_percision)
+        torch.cuda.set_device(self.device)
 
         self.log_dir = log_dir
 
@@ -82,43 +92,8 @@ class Trainer:
         with open(self.log_file, "w") as _:
             pass
 
-        if self.use_ddp:
-            self._setup_ddp()
-        else:
-            self._setup_device()
-
         self.device_type = "cuda" if self.device.startswith("cuda") else "cpu"
-
         self.model.to(self.device) 
-
-
-    def _setup_device(self) -> None:
-        """
-        Setup the device for training. Use GPU if available, otherwise use CPU.
-        """
-        if torch.cuda.is_available():
-            self.device = "cuda"
-        else:
-            self.device = "cpu"
-        
-        self.ddp_rank = 0
-        self.ddp_local_rank = 0
-        self.ddp_world_size = 1
-        self.main_process = True
-
-
-    def _setup_ddp(self) -> None:
-        """
-        Setup Distributed Data Parallel (DDP) for training.
-        """
-        self.ddp_rank = int(os.environ['RANK'])
-        self.ddp_local_rank = int(os.environ['LOCAL_RANK'])
-        self.ddp_world_size = int(os.environ['WORLD_SIZE'])
-
-        self.device = f'cuda:{self.ddp_local_rank}'
-        torch.cuda.set_device(self.device)
-
-        self.main_process = self.ddp_rank == 0
 
 
     def train(self) -> None:
