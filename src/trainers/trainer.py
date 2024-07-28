@@ -57,7 +57,7 @@ class Trainer:
                  grad_accum_iters: int = 1,
                  metrics: list[str] = ["Hellaswag"],
                  max_lr: float = 6e-4,
-                 min_lr: float = 6e-3,
+                 min_lr: float = 6e-5,
                  use_ddp: bool = False,
                  device: str = "cpu",
                  ddp_rank: int = 0,
@@ -142,15 +142,16 @@ class Trainer:
 
                 is_last_step = (iter == self.max_iters - 1)
 
-                if iter % 500 == 0 or is_last_step:
+                if iter % 250 == 0 or is_last_step:
                     self.validate(epoch, iter, is_last_step)
                     self.evaluate(epoch, iter)
 
-                    if iter > 0:
-                        idx = tokenize_str("Time traveler in 19th century")
-                        generated = self.raw_model.generate(idx, 20)
-                        gen_str = decode_tokens(generated)
-                        print(f"GPU {self.ddp_rank}: {gen_str}")
+                    
+                    idx = tokenize_str("A Time traveler in 19th century")
+                    idx = idx.to(self.device)
+                    generated = self.raw_model.generate(idx, 25)
+                    gen_str = decode_tokens(generated)
+                    print(f"GPU {self.ddp_rank}: {gen_str}")
                 
 
                 if self.device_type == "cuda":
@@ -250,7 +251,7 @@ class Trainer:
         :param iter: The current iteration.
         :type iter: int
         """
-         
+        self.model.eval() 
         if "Hellaswag" in self.metrics:
             num_correct_norm, num_total = hellaswag_evaluation(self.model, self.ddp_world_size,
                                                                self.ddp_rank, self.device, self.device_type)

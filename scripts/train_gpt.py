@@ -28,6 +28,8 @@ def parse_args():
     parser.add_argument("--max_iters", type=int, default=19073, help="Maximum number of iterations")
     parser.add_argument("--total_batch_size", type=int, default=2**19, help="Total batch size")
     parser.add_argument("--metrics", type=str, nargs='+', default=["Hellaswag"], help="Metrics to evaluate")
+    parser.add_argument("--max_lr", type=float, default=6e-4, help="Maximum learning rate")
+    parser.add_argument("--min_lr", type=float, default=6e-5, help="Minimum learning rate")
     
     return parser.parse_args()
 
@@ -88,7 +90,7 @@ def main():
                     device=device, ddp_rank=ddp_rank, ddp_local_rank=ddp_local_rank, ddp_world_size=ddp_world_size,
                     main_process=main_process, monitor=args.monitor, torch_matmul_percision=args.torch_matmul_precision,
                     log_dir=args.log_dir, n_epochs=args.n_epochs, warmup_iters=args.warmup_iters, max_iters=args.max_iters,
-                    grad_accum_iters=grad_accum_iters, metrics=args.metrics)
+                    grad_accum_iters=grad_accum_iters, metrics=args.metrics, max_lr=args.max_lr, min_lr=args.min_lr)
     
     trainer.train()
 
