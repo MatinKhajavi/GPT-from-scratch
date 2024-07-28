@@ -133,7 +133,7 @@ def hellaswag_evaluation(model, ddp_world_size, ddp_rank, device, device_type):
         # get the logits
         with torch.no_grad():
             with torch.autocast(device_type=device_type, dtype=torch.bfloat16):
-                logits, loss = model(tokens)
+                logits = model(tokens)
             pred_norm = get_most_likely_row(tokens, mask, logits)
         num_total += 1
         num_correct_norm += int(pred_norm == label)
