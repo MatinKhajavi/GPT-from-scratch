@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, Any
+from src.models.utils import GPTConfig
+
 
 class MHAttention(nn.Module):
     """
@@ -162,30 +164,30 @@ class TransformerBlock(nn.Module):
     with layer normalization and dropout applied at each step.
     """
 
-    def __init__(self, cfg: Dict[str, Any]) -> None:
+    def __init__(self, cfg: GPTConfig) -> None:
         """
         Initializes the TransformerBlock module.
 
-        :param cfg: Configuration dictionary containing the following keys:
+        :param cfg: Configuration settings containing the following keys:
             - "emb_dim": int, the embedding dimension.
             - "context_length": int, the length of the input sequences.
             - "n_heads": int, the number of attention heads.
             - "drop_rate": float, the dropout rate.
             - "qkv_bias": bool, whether to include bias in the query, key, value projections.
-        :type cfg: Dict[str, Any]
+        :type cfg: GPTConfig
         """
         super().__init__()
         self.mha = MHAttention(
-            d_in=cfg["emb_dim"],
-            d_out=cfg["emb_dim"],
-            n_heads=cfg["n_heads"],
-            dropout=cfg["drop_rate"],
-            qkv_bias=cfg["qkv_bias"]
+            d_in=cfg.emb_dim,
+            d_out=cfg.emb_dim,
+            n_heads=cfg.n_heads,
+            dropout=cfg.drop_rate,
+            qkv_bias=cfg.qkv_bias
         )
-        self.ff = FeedForward(cfg["emb_dim"])
-        self.norm1 = LayerNorm(cfg["emb_dim"])
-        self.norm2 = LayerNorm(cfg["emb_dim"])
-        self.dropout = nn.Dropout(cfg["drop_rate"])
+        self.ff = FeedForward(cfg.emb_dim)
+        self.norm1 = LayerNorm(cfg.emb_dim)
+        self.norm2 = LayerNorm(cfg.emb_dim)
+        self.dropout = nn.Dropout(cfg.drop_rate)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """

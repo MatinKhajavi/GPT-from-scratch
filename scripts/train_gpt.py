@@ -10,7 +10,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Distributed Training Script")
     parser.add_argument("--n_batches", type=int, default=64, help="Number of batches")
     parser.add_argument("--n_tokens", type=int, default=1024, help="Number of tokens")
-    parser.add_argument("--data_root", type=str, default="edu_fineweb10B", help="Data root directory")
+    parser.add_argument("--data_root", type=str, default="data/edu_fineweb10B", help="Data root directory")
     parser.add_argument("--vocab_size", type=int, default=50257, help="Vocabulary size")
     parser.add_argument("--emb_dim", type=int, default=768, help="Embedding dimension")
     parser.add_argument("--context_length", type=int, default=1024, help="Context length")
