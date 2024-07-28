@@ -36,6 +36,11 @@ class Trainer:
     :param max_lr: Maximum learning rate.
     :param min_lr: Minimum learning rate.
     :param use_ddp: Flag to setup DDP or not.
+    :param device: The device to run the training on (e.g., "cpu", "cuda").
+    :param ddp_rank: The rank of the process in DDP training.
+    :param ddp_local_rank: The local rank of the process in DDP training.
+    :param ddp_world_size: The total number of processes in DDP training.
+    :param main_process: Flag to indicate if the current process is the main process.
     :param monitor: Flag to monitor the training process.
     :param torch_matmul_percision: Set the precision of floating-point matrix multiplications.
     :param log_dir: Directory to store logs.
