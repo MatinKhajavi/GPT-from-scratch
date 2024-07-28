@@ -88,7 +88,9 @@ class Trainer:
         self.monitor = monitor
 
         torch.set_float32_matmul_precision(torch_matmul_percision)
-        torch.cuda.set_device(self.device)
+        
+        if use_ddp:
+            torch.cuda.set_device(self.device)
 
         self.log_dir = log_dir
 
@@ -108,7 +110,7 @@ class Trainer:
         
         self.optimizer = self._get_optimizer(weight_decay=0.1, learning_rate=6e-4)
 
-        for epoch in self.n_epochs:
+        for epoch in range(self.n_epochs):
             self._on_epoch_begin()
 
             for iter in range(self.max_iters):
@@ -125,7 +127,7 @@ class Trainer:
                     if self.use_ddp:
                         self.model.require_backward_grad_sync = (micro_iter == self.grad_accum_iters - 1)
                     with torch.autocast(device_type=self.device_type, dtype=torch.bfloat16):
-                        logits = self.model(x, y)
+                        logits = self.model(x)
                         loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
 
                     loss = loss / self.grad_accum_iters
@@ -216,7 +218,7 @@ class Trainer:
             x, y = self.val_loader.next_batch()
             x, y = x.to(self.device), y.to(self.device)
             with torch.autocast(device_type=self.device_type, dtype=torch.bfloat16):
-                logits = self.model(x, y)
+                logits = self.model(x)
                 loss = F.cross_entropy(logits.view(-1, logits.size(-1)), y.view(-1))
             loss = loss / val_loss_iters
             val_loss_accum += loss.detach()
