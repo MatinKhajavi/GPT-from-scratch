@@ -1,1 +1,2 @@
-from .gpt import GPT, GPTConfig
+from .gpt import GPT
+from .utils import GPTConfig
