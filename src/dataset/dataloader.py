@@ -13,8 +13,8 @@ class DataLoaderConfig:
     :type n_batches: int
     :param n_tokens: Number of tokens per batch.
     :type n_tokens: int
-    :param data_name: Directory name where data shards are stored.
-    :type data_name: str
+    :param data_root: Directory name where data shards are stored.
+    :type data_root: str
     :param process_rank: Rank of the current process (for parallel processing).
     :type process_rank: int
     :param n_processes: Total number of processes involved.
@@ -27,7 +27,7 @@ class DataLoaderConfig:
 
     n_batches: int
     n_tokens: int
-    data_name: str
+    data_root: str
     process_rank: int
     n_processes: int
     main_process: bool
@@ -53,7 +53,7 @@ class DataLoader:
         assert cfg.split in {'train', 'val'}, "Invalid split. It must be 'train' or 'val'."
 
 
-        shards = sorted([os.path.join(cfg.data_name, s) for s in os.listdir(cfg.data_name) if cfg.split in s])
+        shards = sorted([os.path.join(cfg.data_root, s) for s in os.listdir(cfg.data_root) if cfg.split in s])
 
         self.shards = shards
         assert len(shards) > 0, f"no shards found for split {self.cfg.split}"
