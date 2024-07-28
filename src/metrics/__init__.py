@@ -1,1 +1,1 @@
-from hellaswag import hellaswag_evaluation
+from .hellaswag import hellaswag_evaluation
