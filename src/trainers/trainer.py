@@ -10,7 +10,7 @@ import os
 import time
 import torch
 import torch.nn.functional as F
-from torch.distributed import init_process_group, destroy_process_group
+from torch.distributed import destroy_process_group
 import torch.distributed as dist
 import math
 from typing import Optional, Any, Union
@@ -100,7 +100,6 @@ class Trainer:
             pass
 
         self.device_type = "cuda" if self.device.startswith("cuda") else "cpu"
-        self.model.to(self.device) 
 
 
     def train(self) -> None:
@@ -112,7 +111,6 @@ class Trainer:
 
         for epoch in range(self.n_epochs):
             self._on_epoch_begin()
-
             for iter in range(self.max_iters):
                 t0 = time.time()
 
@@ -138,8 +136,7 @@ class Trainer:
                     dist.all_reduce(accumulated_loss, op=dist.ReduceOp.AVG)
                 
                 norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                
-                lr = self.adjust_optimizer_lr(self.optimizer, iter)
+                lr = self.adjust_optimizer_lr(iter)
                 
                 self.optimizer.step()
 
@@ -151,7 +148,7 @@ class Trainer:
 
                     if iter > 0:
                         idx = tokenize_str("Time traveler in 19th century")
-                        generated = self.model.generate(idx, 20)
+                        generated = self.raw_model.generate(idx, 20)
                         gen_str = decode_tokens(generated)
                         print(f"GPU {self.ddp_rank}: {gen_str}")
                 

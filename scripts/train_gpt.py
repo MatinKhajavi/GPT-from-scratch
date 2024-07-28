@@ -5,13 +5,15 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from src.models import GPT, GPTConfig
 from src.trainers import Trainer
 from src.dataset import DataLoader, DataLoaderConfig
+from torch.distributed import init_process_group
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Distributed Training Script")
-    parser.add_argument("--n_batches", type=int, default=64, help="Number of batches")
+    parser.add_argument("--n_batches", type=int, default=16, help="Number of batches")
     parser.add_argument("--n_tokens", type=int, default=1024, help="Number of tokens")
     parser.add_argument("--data_root", type=str, default="data/edu_fineweb10B", help="Data root directory")
-    parser.add_argument("--vocab_size", type=int, default=50257, help="Vocabulary size")
+    parser.add_argument("--vocab_size", type=int, default=50304, help="Vocabulary size")
     parser.add_argument("--emb_dim", type=int, default=768, help="Embedding dimension")
     parser.add_argument("--context_length", type=int, default=1024, help="Context length")
     parser.add_argument("--drop_rate", type=float, default=0.1, help="Dropout rate")
@@ -24,10 +26,11 @@ def parse_args():
     parser.add_argument("--n_epochs", type=int, default=1, help="Number of epochs")
     parser.add_argument("--warmup_iters", type=int, default=715, help="Number of warmup iterations")
     parser.add_argument("--max_iters", type=int, default=19073, help="Maximum number of iterations")
-    parser.add_argument("--grad_accum_iters", type=int, default=1, help="Gradient accumulation iterations")
+    parser.add_argument("--total_batch_size", type=int, default=2**19, help="Total batch size")
     parser.add_argument("--metrics", type=str, nargs='+', default=["Hellaswag"], help="Metrics to evaluate")
     
     return parser.parse_args()
+
 
 def main():
     args = parse_args()
@@ -37,6 +40,7 @@ def main():
 
     use_ddp = int(os.environ.get('RANK', -1)) != -1
     if use_ddp:
+        init_process_group(backend='nccl')
         ddp_rank = int(os.environ['RANK'])
         ddp_local_rank = int(os.environ['LOCAL_RANK'])
         ddp_world_size = int(os.environ['WORLD_SIZE'])
@@ -72,17 +76,19 @@ def main():
         qkv_bias=args.qkv_bias
     )
     model = GPT(model_cfg)
+    model.to(device)
     
     if use_ddp:
         model = DDP(model, device_ids=[ddp_local_rank])
     
     raw_model = model.module if use_ddp else model
 
+    grad_accum_iters = args.total_batch_size // (n_batches * n_tokens * ddp_world_size)
     trainer = Trainer(model=model, train_loader=train_loader, val_loader=val_loader, raw_model=raw_model, use_ddp=use_ddp,
                     device=device, ddp_rank=ddp_rank, ddp_local_rank=ddp_local_rank, ddp_world_size=ddp_world_size,
                     main_process=main_process, monitor=args.monitor, torch_matmul_percision=args.torch_matmul_precision,
                     log_dir=args.log_dir, n_epochs=args.n_epochs, warmup_iters=args.warmup_iters, max_iters=args.max_iters,
-                    grad_accum_iters=args.grad_accum_iters, metrics=args.metrics)
+                    grad_accum_iters=grad_accum_iters, metrics=args.metrics)
     
     trainer.train()
 
