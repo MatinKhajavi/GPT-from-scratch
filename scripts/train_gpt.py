@@ -16,7 +16,7 @@ def parse_args():
     parser.add_argument("--vocab_size", type=int, default=50304, help="Vocabulary size")
     parser.add_argument("--emb_dim", type=int, default=768, help="Embedding dimension")
     parser.add_argument("--context_length", type=int, default=1024, help="Context length")
-    parser.add_argument("--drop_rate", type=float, default=0.1, help="Dropout rate")
+    parser.add_argument("--drop_rate", type=float, default=0.0, help="Dropout rate")
     parser.add_argument("--n_layers", type=int, default=12, help="Number of layers")
     parser.add_argument("--n_heads", type=int, default=12, help="Number of attention heads")
     parser.add_argument("--qkv_bias", action='store_true', default=False, help="Use bias in QKV projection")

@@ -10,7 +10,7 @@ class GPT(nn.Module):
     """
     GPT Model
 
-    This module applies a GPT-like architecture with token and positional embeddings,
+    This module applies a GPT architecture with token and positional embeddings,
     followed by a series of transformer blocks and a final normalization and output layer.
     """
 
