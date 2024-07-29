@@ -6,6 +6,7 @@ setup(
     version="1.1",
     packages=find_packages(),
     license="MIT",
+    author="Matin Khajavi",
     url='https://github.com/MatinKhajavi/GPT-from-scratch',
     install_requires=[
         'datasets',
