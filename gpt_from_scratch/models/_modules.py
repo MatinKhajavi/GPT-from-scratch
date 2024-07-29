@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, Any
-from src.models.utils import GPTConfig
+from gpt_from_scratch.models.utils import GPTConfig
 
 
 class MHAttention(nn.Module):

@@ -2,7 +2,7 @@ import os
 import argparse
 import multiprocessing as mp
 from datasets import load_dataset
-from src.dataset import Tokenizer, ShardManager
+from gpt_from_scratch.dataset import Tokenizer, ShardManager
 
 
 def parse_args():

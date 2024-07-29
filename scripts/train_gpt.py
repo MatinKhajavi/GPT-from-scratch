@@ -2,9 +2,9 @@ import os
 import argparse
 import torch
 from torch.nn.parallel import DistributedDataParallel as DDP
-from src.models import GPT, GPTConfig
-from src.trainers import Trainer
-from src.dataset import DataLoader, DataLoaderConfig
+from gpt_from_scratch.models import GPT, GPTConfig
+from gpt_from_scratch.trainers import Trainer
+from gpt_from_scratch.dataset import DataLoader, DataLoaderConfig
 from torch.distributed import init_process_group
 
 

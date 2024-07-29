@@ -14,11 +14,11 @@ from torch.distributed import destroy_process_group
 import torch.distributed as dist
 import math
 from typing import Optional, Any, Union
-from src.dataset import DataLoader
+from gpt_from_scratch.dataset import DataLoader
 import inspect
 from torch.optim import Optimizer
-from src.metrics import hellaswag_evaluation
-from src.dataset import tokenize_str, decode_tokens
+from gpt_from_scratch.metrics import hellaswag_evaluation
+from gpt_from_scratch.dataset import tokenize_str, decode_tokens
 
 class Trainer:
     """

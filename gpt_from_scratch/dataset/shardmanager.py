@@ -1,5 +1,5 @@
 import numpy as np
-from src.dataset.utils import write_datafile
+from gpt_from_scratch.dataset.utils import write_datafile
 from tqdm import tqdm
 import os
 
